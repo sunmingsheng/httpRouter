@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"httpRouter/router"
+	"httpRouter"
 	"net/http"
 )
 
 func main() {
-	mux := router.NewMux()
+	mux := httpRouter.NewMux()
 	r := mux.Router
 	r.Get("test", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("test"))
@@ -38,7 +38,7 @@ func middleware1(ctx *context.Context) http.Handler {
 			*ctx = context.WithValue(*ctx, "age", r.Form.Get("age"))
 		}
 		w.Write([]byte("mid1..."))
-		router.Next(ctx)
+		httpRouter.Next(ctx)
 	})
 }
 
@@ -50,7 +50,7 @@ func middleware2(ctx *context.Context) http.Handler {
 			*ctx = context.WithValue(*ctx, "sex",r.Form.Get("sex"))
 		}
 		w.Write([]byte("mid2..."))
-		router.Next(ctx)
+		httpRouter.Next(ctx)
 	})
 }
 
