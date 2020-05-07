@@ -2,8 +2,15 @@ package router
 
 import (
 	"context"
+	"github.com/hashicorp/go-uuid"
 	"net/http"
 )
+
+var nextFlagId string
+
+func init() {
+	nextFlagId, _ = uuid.GenerateUUID()
+}
 
 //http服务调度器
 type Mux struct {
@@ -78,7 +85,7 @@ func (group *Group) Post(path string,f func (w http.ResponseWriter, r *http.Requ
 
 //处理函数继续往下执行
 func Next(ctx *context.Context) {
-	*ctx = context.WithValue(*ctx, "next", true)
+	*ctx = context.WithValue(*ctx, nextFlagId, true)
 }
 
 //处理请求
@@ -97,13 +104,13 @@ func requestHandler(midFuncSlices []middlewareFunc, f func (w http.ResponseWrite
 				return
 			}
 		}
-		//在切片头部加入基础中间件
+
 		ctx := context.Background()
 		for _, middlewareFunc := range midFuncSlices {
-			ctx = context.WithValue(ctx, "next", false)
+			ctx = context.WithValue(ctx, nextFlagId, false)
 			h := middlewareFunc(&ctx)
 			h.ServeHTTP(w, r)
-			if ctx.Value("next").(bool) == false {
+			if ctx.Value(nextFlagId).(bool) == false {
 				return
 			}
 			r = r.WithContext(ctx)
