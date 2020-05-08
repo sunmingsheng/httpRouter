@@ -17,6 +17,7 @@ func main() {
 	g.Any("/demo", func (w http.ResponseWriter, r *http.Request) {
 		fmt.Println(r.Context().Value("age"))
 		fmt.Println(r.Context().Value("sex"))
+		panic("xxxxxxx")
 		w.Write([]byte("inner..."))
 	})
 	g2 := g.AddGroup("/2", middleware2)

@@ -12,21 +12,29 @@ func init() {
 	nextFlagId, _ = uuid.GenerateUUID()
 }
 
+const (
+	MethodAny    = "Any"
+	MethodGet    = "Get"
+	MethodPost   = "Post"
+	MethodPut    = "Put"
+	MethodDelete = "Delete"
+)
+
 //http服务调度器
 type Mux struct {
 	serveMux *http.ServeMux
-	Router *Group
+	Router   *Group
 }
 
 //路由分组
 type Group struct {
-	serveMux *http.ServeMux
+	serveMux  *http.ServeMux
 	groupPath string
-	handlers []middlewareFunc
+	handlers  []middlewareFunc
 }
 
 //定义中间件函数类型
-type middlewareFunc func (ctx *context.Context) http.Handler
+type middlewareFunc func(ctx *context.Context) http.Handler
 
 //生成一个新的调度器
 func NewMux() *Mux {
@@ -49,8 +57,8 @@ func (Mux *Mux) StartMux(port string) error {
 
 //添加默认路由分组
 func (Mux *Mux) AddDefaultGroup(groupPath string, handlers ...middlewareFunc) *Group {
-	return &Group {
-		serveMux: Mux.serveMux,
+	return &Group{
+		serveMux:  Mux.serveMux,
 		groupPath: groupPath,
 		handlers:  handlers,
 	}
@@ -59,28 +67,40 @@ func (Mux *Mux) AddDefaultGroup(groupPath string, handlers ...middlewareFunc) *G
 //添加路由分组
 func (group *Group) AddGroup(groupPath string, handlers ...middlewareFunc) *Group {
 	return &Group{
-		serveMux: group.serveMux,
+		serveMux:  group.serveMux,
 		groupPath: group.groupPath + groupPath,
 		handlers:  append(group.handlers, handlers...),
 	}
 }
 
 //为分组添加具体路由
-func (group *Group) Any(path string,f func (w http.ResponseWriter, r *http.Request)) {
-	h := requestHandler(group.handlers, f, "Any")
-	group.serveMux.HandleFunc(group.groupPath + path, h)
+func (group *Group) Any(path string, f func(w http.ResponseWriter, r *http.Request)) {
+	h := requestHandler(group.handlers, f, MethodAny)
+	group.serveMux.HandleFunc(group.groupPath+path, h)
 }
 
 //为分组添加具体路由
-func (group *Group) Get(path string,f func (w http.ResponseWriter, r *http.Request)) {
-	h := requestHandler(group.handlers, f, "Get")
-	group.serveMux.HandleFunc(group.groupPath + path, h)
+func (group *Group) Get(path string, f func(w http.ResponseWriter, r *http.Request)) {
+	h := requestHandler(group.handlers, f, MethodGet)
+	group.serveMux.HandleFunc(group.groupPath+path, h)
 }
 
 //为分组添加具体路由
-func (group *Group) Post(path string,f func (w http.ResponseWriter, r *http.Request)) {
-	h := requestHandler(group.handlers, f, "Post")
-	group.serveMux.HandleFunc(group.groupPath + path, h)
+func (group *Group) Post(path string, f func(w http.ResponseWriter, r *http.Request)) {
+	h := requestHandler(group.handlers, f, MethodPost)
+	group.serveMux.HandleFunc(group.groupPath+path, h)
+}
+
+//为分组添加具体路由
+func (group *Group) Put(path string, f func(w http.ResponseWriter, r *http.Request)) {
+	h := requestHandler(group.handlers, f, MethodPut)
+	group.serveMux.HandleFunc(group.groupPath+path, h)
+}
+
+//为分组添加具体路由
+func (group *Group) Delete(path string, f func(w http.ResponseWriter, r *http.Request)) {
+	h := requestHandler(group.handlers, f, MethodDelete)
+	group.serveMux.HandleFunc(group.groupPath+path, h)
 }
 
 //处理函数继续往下执行
@@ -89,17 +109,27 @@ func Next(ctx *context.Context) {
 }
 
 //处理请求
-func requestHandler(midFuncSlices []middlewareFunc, f func (w http.ResponseWriter, r *http.Request), acceptMethod string) func(http.ResponseWriter, *http.Request) {
+func requestHandler(midFuncSlices []middlewareFunc, f func(w http.ResponseWriter, r *http.Request), acceptMethod string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch acceptMethod {
-		case "Any":
-		case "Post":
+		case MethodAny:
+		case MethodPost:
 			if r.Method != http.MethodPost {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}
-		case "Get":
+		case MethodGet:
 			if r.Method != http.MethodGet {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+		case MethodPut:
+			if r.Method != http.MethodPut {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+		case MethodDelete:
+			if r.Method != http.MethodDelete {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}
@@ -121,11 +151,12 @@ func requestHandler(midFuncSlices []middlewareFunc, f func (w http.ResponseWrite
 
 //定义基础中间件
 func defaultMiddleware(ctx *context.Context) http.Handler {
-	return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		Next(ctx)
 	})
 }
+
 
 
 
