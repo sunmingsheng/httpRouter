@@ -10,18 +10,18 @@ import (
 func main() {
 	mux := httpRouter.NewMux()
 	r := mux.Router
-	r.Get("test", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("test"))
+	r.Get("demo", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("demo"))
 	})
 	g := r.AddGroup("admin", middleware2, middleware1)
-	g.Any("/test", func (w http.ResponseWriter, r *http.Request) {
+	g.Any("/demo", func (w http.ResponseWriter, r *http.Request) {
 		fmt.Println(r.Context().Value("age"))
 		fmt.Println(r.Context().Value("sex"))
 		w.Write([]byte("inner..."))
 	})
 	g2 := g.AddGroup("/2", middleware2)
-	g2.Get("/test", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("2/test"))
+	g2.Get("/demo", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("2/demo"))
 	})
 
 	if err := mux.StartMux(":8080"); err != nil {
